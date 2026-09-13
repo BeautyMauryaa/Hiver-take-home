@@ -3,6 +3,7 @@
 extract_examples.py
 
 Pulls the 180-example golden set out of golden_labeling_tool.html and writes
+
 a model-facing input file that contains ONLY example_id + raw_text.
 
 This is a deliberate physical separation: provenance (sampling_stratum_hint,
