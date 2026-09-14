@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>golden_set_v1 — blind labeling</title>
+<style>
+  :root {
+    --paper: #F6F4EF;
+    --panel: #ECE8DF;
+    --ink: #23262B;
+    --ink-soft: #5B5F66;
+    --line: #D9D4C8;
+    --accent: #3C6E71;
+    --accent-ink: #F6F4EF;
+    --amber: #B8781F;
+    --amber-soft: #FBF0E2;
+    --danger: #A8433A;
+    --danger-soft: #FBEDEA;
+    --radius: 3px;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Source Serif Pro", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .app {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 24px 80px;
+  }
+  header.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+  }
+  .title-block h1 {
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0 0 2px;
+    letter-spacing: 0.01em;
+  }
+  .title-block p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+  .progress-wrap {
+    flex: 1 1 260px;
+    min-width: 220px;
+  }
+  .progress-track {
+    height: 6px;
+    background: var(--panel);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.25s ease;
+  }
+  .progress-label {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 5px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .save-indicator {
+    font-size: 12px;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    white-space: nowrap;
+  }
+  .save-indicator.show { opacity: 1; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 22px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.cheatsheet { order: 2; }
+    section.message-panel { order: 1; }
+  }
+
+  section.message-panel, aside.cheatsheet {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+  }
+  aside.cheatsheet {
+    background: var(--panel);
+    position: sticky;
+    top: 20px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+  }
+
+  .example-date {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+    font-family: var(--mono);
+  }
+  blockquote.raw-text {
+    font-family: var(--serif);
+    font-size: 19px;
+    line-height: 1.55;
+    margin: 0 0 22px;
+    padding: 16px 18px;
+    background: var(--amber-soft);
+    border-left: 3px solid var(--amber);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .field { margin-bottom: 18px; }
+  .field label.field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 7px;
+    color: var(--ink);
+  }
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .toggle-btn {
+    padding: 7px 14px;
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+  .toggle-btn:hover { border-color: var(--accent); }
+  .toggle-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .toggle-btn.active.negative {
+    background: var(--ink-soft);
+    border-color: var(--ink-soft);
+  }
+  select, textarea {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font-family: var(--sans);
+    font-size: 14px;
+    background: #fff;
+    color: var(--ink);
+  }
+  select:disabled, textarea:disabled {
+    background: #F2F1ED;
+    color: var(--ink-soft);
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  .hint {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 5px;
+  }
+  .reminder-banner {
+    background: var(--danger-soft);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.45;
+    margin-bottom: 18px;
+  }
+  aside.cheatsheet h2 {
+    font-size: 13px;
+    text-transform: none;
+    letter-spacing: 0.01em;
+    margin: 20px 0 8px;
+    color: var(--ink);
+  }
+  aside.cheatsheet h2:first-of-type { margin-top: 0; }
+  aside.cheatsheet ul, aside.cheatsheet ol {
+    margin: 0 0 4px;
+    padding-left: 19px;
+  }
+  aside.cheatsheet li {
+    margin-bottom: 9px;
+    font-size: 13px;
+    line-height: 1.48;
+  }
+  aside.cheatsheet li strong { color: var(--accent); }
+  aside.cheatsheet .rule-code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: #fff;
+    padding: 1px 5px;
+    border-radius: 2px;
+    border: 1px solid var(--line);
+  }
+
+  .controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 26px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .controls .left-group, .controls .right-group {
+    display: flex;
+    gap: 8px;
+  }
+  button.nav-btn {
+    padding: 9px 18px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  button.nav-btn.primary {
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+  }
+  button.nav-btn.primary:disabled {
+    background: #C7C4BB;
+    border-color: #C7C4BB;
+    cursor: not-allowed;
+  }
+  button.nav-btn:disabled { cursor: not-allowed; opacity: 0.55; }
+  .validation-msg {
+    font-size: 12.5px;
+    color: var(--danger);
+    margin-top: 8px;
+    min-height: 16px;
+  }
+  .export-bar {
+    margin-top: 22px;
+    padding: 16px 18px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .export-bar p { margin: 0; font-size: 13px; color: var(--ink-soft); }
+  button.export-btn {
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .visually-hidden { position: absolute; left: -9999px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="title-block">
+      <h1>golden_set_v1 — blind labeling</h1>
+      <p>AppleSupport · taxonomy v1.1 · escalation policy v1.1 (Flow 1 only)</p>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label">
+        <span id="progressCount">0 of 180 labeled</span>
+        <span class="save-indicator" id="saveIndicator">Saved</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <section class="message-panel">
+      <div class="example-date" id="exampleMeta">Example 1 of 180</div>
+      <div class="example-date" id="exampleDate"></div>
+      <blockquote class="raw-text" id="rawText"></blockquote>
+
+      <form id="labelForm" autocomplete="off">
+        <div class="field">
+          <label class="field-label">Is this an actual support request? (<code>is_support_request</code>)</label>
+          <div class="btn-row" data-group="is_support_request">
+            <button type="button" class="toggle-btn" data-value="true">Yes — real support request</button>
+            <button type="button" class="toggle-btn" data-value="false">No — noise / off-topic</button>
+          </div>
+        </div>
+
+        <div class="field" id="intentField">
+          <label class="field-label">Intent (<code>intent</code>) — taxonomy v1.1</label>
+          <select id="intentSelect">
+            <option value="">— select —</option>
+            <option>Battery/Power</option>
+            <option>Software/OS Bug</option>
+            <option>Apple ID/Account Security</option>
+            <option>How-to/Feature Guidance</option>
+            <option>Backup/Data Recovery</option>
+            <option>Billing/Payment</option>
+            <option>App/Service Issue</option>
+            <option>Repair/Physical Damage</option>
+            <option>Connectivity</option>
+            <option>Other/Ambiguous</option>
+          </select>
+          <p class="hint">Disabled and cleared automatically when this is marked "No" above.</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Should this be escalated? (<code>should_escalate</code>) — policy ground truth only</label>
+          <div class="btn-row" data-group="should_escalate">
+            <button type="button" class="toggle-btn" data-value="true">Yes — escalate</button>
+            <button type="button" class="toggle-btn negative" data-value="false">No — auto-handle by policy</button>
+          </div>
+        </div>
+
+        <div class="field" id="reasonField">
+          <label class="field-label">Escalation reason (<code>escalation_reason</code>) — ground-truth codes only</label>
+          <select id="reasonSelect">
+            <option value="">— select —</option>
+            <option value="ACCOUNT_SECURITY">ACCOUNT_SECURITY</option>
+            <option value="DEVICE_LOST_STOLEN">DEVICE_LOST_STOLEN</option>
+            <option value="BILLING_DISPUTE">BILLING_DISPUTE</option>
+            <option value="PHYSICAL_INSPECTION_REQUIRED">PHYSICAL_INSPECTION_REQUIRED</option>
+            <option value="PRIVATE_ACCOUNT_DATA_REQUIRED">PRIVATE_ACCOUNT_DATA_REQUIRED</option>
+            <option value="NON_ENGLISH_UNSUPPORTED">NON_ENGLISH_UNSUPPORTED</option>
+          </select>
+          <p class="hint">NO_GROUNDING_EVIDENCE / LOW_CLASSIFICATION_CONFIDENCE are runtime-only codes — never assign them here. If more than one ground-truth reason applies, pick the primary one here and note the secondary in labeler notes.</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Boundary case? (<code>boundary_case</code>) — your own independent judgment</label>
+          <div class="btn-row" data-group="boundary_case">
+            <button type="button" class="toggle-btn" data-value="true">Yes — this felt ambiguous</button>
+            <button type="button" class="toggle-btn" data-value="false">No — straightforward</button>
+          </div>
+          <p class="hint">Boundary case = you seriously considered two or more taxonomy intents as plausible primary labels before applying the precedence rules.</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Notes (<code>labeler_notes</code>) — optional</label>
+          <textarea id="notesInput" placeholder="Reasoning, secondary escalation reasons, anything worth remembering..."></textarea>
+        </div>
+      </form>
+
+      <div class="validation-msg" id="validationMsg"></div>
+
+      <div class="controls">
+        <div class="left-group">
+          <button class="nav-btn" id="prevBtn">← Previous</button>
+        </div>
+        <div class="right-group">
+          <button class="nav-btn" id="skipBtn">Skip for now</button>
+          <button class="nav-btn primary" id="nextBtn">Save &amp; next →</button>
+        </div>
+      </div>
+
+      <div class="export-bar">
+        <p id="exportSummary">0 of 180 labeled.</p>
+        <button class="export-btn" id="exportBtn">Export golden_set_v1.jsonl</button>
+      </div>
+    </section>
+
+    <aside class="cheatsheet">
+      <div class="reminder-banner">
+        Assume adequate historical evidence exists. Do not consider retrieval quality or classifier confidence when labeling should_escalate.
+      </div>
+
+      <h2>Precedence rules (taxonomy v1.1)</h2>
+      <ul>
+        <li><strong>Battery vs. Bug:</strong> battery/charging/drain/overheat language → <span class="rule-code">Battery/Power</span>, even if blamed on an update.</li>
+        <li><strong>Connectivity vs. Bug:</strong> WiFi/Bluetooth/cellular toggling itself → <span class="rule-code">Connectivity</span>, even if blamed on an update.</li>
+        <li><strong>How-to vs. malfunction:</strong> "how do I fix X" where X is broken → the malfunction category, never How-to. How-to is only for a working device/feature.</li>
+        <li><strong>App/Service vs. Bug:</strong> a specifically named app/service → <span class="rule-code">App/Service Issue</span>. Unnamed, general device/OS symptoms → <span class="rule-code">Software/OS Bug</span>.</li>
+        <li><strong>Apple ID vs. How-to:</strong> only an actual access failure (locked out, compromised, can't authenticate) → <span class="rule-code">Apple ID/Account Security</span>. A working account with an informational question → How-to.</li>
+        <li><strong>Billing vs. Battery ("charge"):</strong> money/transaction/refund context → <span class="rule-code">Billing/Payment</span>. Physical charging cable/port/battery-level context → <span class="rule-code">Battery/Power</span>.</li>
+        <li><strong>Multi-issue messages:</strong> pick the customer's stated main problem; if none stated, pick the most consequential/immediate need. No multi-intent label exists.</li>
+      </ul>
+
+      <h2>Escalation — Flow 1 only (ground truth)</h2>
+      <ol>
+        <li>Check in order: account security / access failure → lost or stolen device → billing dispute or refund → physical damage/repair → non-English (input or requested) → requires private account/order lookup. First match sets <span class="rule-code">should_escalate=true</span> with that reason as primary.</li>
+        <li>If none apply → <span class="rule-code">should_escalate=false</span> by policy default — assuming adequate historical evidence exists. Do not reason about retrieval or model confidence; that layer doesn't exist at this stage.</li>
+        <li>Hostile or abusive tone alone never escalates — it's a secondary note only, recorded in labeler notes, not a reason code on its own.</li>
+      </ol>
+    </aside>
+  </div>
+</div>
+
+<script type="application/json" id="example-data">[{"example_id": "2285370", "raw_text": "Seriously @AppleSupport why can I not get through to you on the phone?!. Your courier has lost my order.", "created_at_display": "11 November 2017", "created_at_iso": "Sat Nov 11 09:28:00 +0000 2017", "provenance": {"tweet_id": "2285370", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Backup/Data Recovery", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.512479485258815, "nearest_corpus_root_id": "1570974"}}, {"example_id": "1535565", "raw_text": "Horrible day my @115858 ID got hacked now I have no computer for a couple days. #applehasletmedown the best computer company out virus free Apple but I guess the security isn’t as tight on the ID’s that hold all your info 😢😢😢", "created_at_display": "17 October 2017", "created_at_iso": "Tue Oct 17 02:24:29 +0000 2017", "provenance": {"tweet_id": "1535565", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Apple ID/Account Security", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.27061576812857546, "nearest_corpus_root_id": "648545"}}, {"example_id": "1123834", "raw_text": "@AppleSupport @115858 why is the bluetooth activating when i turn off the plane mode ? #ios11 #iPhone6 Is this fixed with the next #ios update ? Thanks in advance ? (I am already with #ios1103)", "created_at_display": "15 October 2017", "created_at_iso": "Sun Oct 15 07:15:28 +0000 2017", "provenance": {"tweet_id": "1123834", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Connectivity", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.27273720474533625, "nearest_corpus_root_id": "2379313"}}, {"example_id": "2303153", "raw_text": "My shit is starting to glitch and freeze now. Fuck you @115858", "created_at_display": "12 November 2017", "created_at_iso": "Sun Nov 12 16:26:49 +0000 2017", "provenance": {"tweet_id": "2303153", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.37669022884598446, "nearest_corpus_root_id": "2438526"}}, {"example_id": "1656543", "raw_text": "@AppleSupport what is this nonsense with my i? I️ shouldn’t have to replace it. Fix it", "created_at_display": "6 November 2017", "created_at_iso": "Mon Nov 06 02:15:26 +0000 2017", "provenance": {"tweet_id": "1656543", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Repair/Physical Damage", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4408512936671861, "nearest_corpus_root_id": "2117312"}}, {"example_id": "1792807", "raw_text": "Oh hell no screen record BROKE! Sounds stops half way thru. Fix it @115858! Fix it @18540!", "created_at_display": "12 October 2017", "created_at_iso": "Thu Oct 12 01:52:10 +0000 2017", "provenance": {"tweet_id": "1792807", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Repair/Physical Damage", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.32698456333815873, "nearest_corpus_root_id": "338173"}}, {"example_id": "1566007", "raw_text": "@AppleSupport  I purchased something from you guys and I canceled the order and I need my money back on my credit card 😩😩", "created_at_display": "4 November 2017", "created_at_iso": "Sat Nov 04 07:13:06 +0000 2017", "provenance": {"tweet_id": "1566007", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Billing/Payment", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.30898730170507516, "nearest_corpus_root_id": "2676864"}}, {"example_id": "1524256", "raw_text": "@115858 please fix this question mark box stuff!!!!", "created_at_display": "3 November 2017", "created_at_iso": "Fri Nov 03 12:58:13 +0000 2017", "provenance": {"tweet_id": "1524256", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.8564261245211436, "nearest_corpus_root_id": "1948307"}}, {"example_id": "1908308", "raw_text": "@AppleSupport   How Can I get more Volume out of my AirPods?", "created_at_display": "25 October 2017", "created_at_iso": "Wed Oct 25 17:47:32 +0000 2017", "provenance": {"tweet_id": "1908308", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:How-to/Feature Guidance", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.45502871205137274, "nearest_corpus_root_id": "283586"}}, {"example_id": "565034", "raw_text": "@AppleSupport I'm having trouble setting up a new phone from a backup.", "created_at_display": "3 December 2017", "created_at_iso": "Sun Dec 03 00:23:40 +0000 2017", "provenance": {"tweet_id": "565034", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Backup/Data Recovery", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.5111377517250819, "nearest_corpus_root_id": "1571688"}}, {"example_id": "1862253", "raw_text": "So it turns out you can have anything but Apple e-mail address for Apple ID according to @AppleSupport … What a mess", "created_at_display": "19 October 2017", "created_at_iso": "Thu Oct 19 17:59:59 +0000 2017", "provenance": {"tweet_id": "1862253", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Apple ID/Account Security", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3357721160836533, "nearest_corpus_root_id": "406652"}}, {"example_id": "568459", "raw_text": "Hello !, @AppleSupport I have an iPhone 6S, and I want to delete the iCloud photos that I have 5GB and I do not have more space. How can I delete the 635 photos?", "created_at_display": "3 December 2017", "created_at_iso": "Sun Dec 03 02:08:44 +0000 2017", "provenance": {"tweet_id": "568459", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "boundary:Apple ID/Account Security+How-to/Feature Guidance", "boundary_candidate_design": true, "overlap_pair": "('Apple ID/Account Security', 'How-to/Feature Guidance')", "nearest_corpus_sim": 0.3485871532578084, "nearest_corpus_root_id": "184501"}}, {"example_id": "2403677", "raw_text": "@AppleSupport I bought a MacBook at an apple store and I wasn't sent an electronic receipt and was not given a physical one but I paid with my credit card. Can I return it without the receipt if I have the card I paid with. Its only been a few days ago", "created_at_display": "14 November 2017", "created_at_iso": "Tue Nov 14 09:00:01 +0000 2017", "provenance": {"tweet_id": "2403677", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Billing/Payment", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.7047535394626542, "nearest_corpus_root_id": "2403679"}}, {"example_id": "2849197", "raw_text": "@115858 I can’t verify my credit card information. It’s quite infuriating because I have many apps I need to update but every time I do so it won’t accept. Last update everything worked fine. Is this a problem on your part?", "created_at_display": "27 November 2017", "created_at_iso": "Mon Nov 27 18:43:34 +0000 2017", "provenance": {"tweet_id": "2849197", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Billing/Payment", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3384469986779397, "nearest_corpus_root_id": "2414319"}}, {"example_id": "2957151", "raw_text": "@AppleSupport my Apple Watch Series 2 sometimes has a sticky Digital Crown, making it hard to turn. Would a repair on this be covered by Apple Care?", "created_at_display": "29 November 2017", "created_at_iso": "Wed Nov 29 19:11:30 +0000 2017", "provenance": {"tweet_id": "2957151", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Repair/Physical Damage", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.38200633521783667, "nearest_corpus_root_id": "512520"}}, {"example_id": "1505178", "raw_text": "@AppleSupport My dad’s phone needs service, Can I bring his phone into the Genius Bar to be serviced for him under an appointment?", "created_at_display": "7 November 2017", "created_at_iso": "Tue Nov 07 00:43:43 +0000 2017", "provenance": {"tweet_id": "1505178", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Repair/Physical Damage", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.34234132848216836, "nearest_corpus_root_id": "2052075"}}, {"example_id": "506511", "raw_text": "@AppleSupport I have recovered MAC OS after consultation on apple helpline and Im unable to run photos, plz guide what to do with it. https://t.co/cCJCYX6BRC", "created_at_display": "1 December 2017", "created_at_iso": "Fri Dec 01 21:01:50 +0000 2017", "provenance": {"tweet_id": "506511", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Backup/Data Recovery", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.346287472220294, "nearest_corpus_root_id": "2055775"}}, {"example_id": "2630208", "raw_text": "My #iPhone is connected to the charger yet my battery level is going backwards.....and my phone is heating up. Yeah, groovy update @115858. 🙄 #MayBeGettingAPixelSoon #Smh #ThisIsRidiculous", "created_at_display": "17 November 2017", "created_at_iso": "Fri Nov 17 16:25:32 +0000 2017", "provenance": {"tweet_id": "2630208", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3281116381997474, "nearest_corpus_root_id": "798837"}}, {"example_id": "2008444", "raw_text": "Phone is on it's last leg.. cracked screen, broken speaker, audio is sketchy af.... @115858 help me out", "created_at_display": "18 October 2017", "created_at_iso": "Wed Oct 18 19:55:27 +0000 2017", "provenance": {"tweet_id": "2008444", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Repair/Physical Damage", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3496613687124266, "nearest_corpus_root_id": "1542670"}}, {"example_id": "1578506", "raw_text": "@AppleSupport soooo uhm i set up my passcode yesterday but its saying its wrong and my phone wont unlock with my face. Do i have to recovery mode unlock?", "created_at_display": "4 November 2017", "created_at_iso": "Sat Nov 04 14:05:43 +0000 2017", "provenance": {"tweet_id": "1578506", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Backup/Data Recovery", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3431925663985371, "nearest_corpus_root_id": "1636558"}}, {"example_id": "2580574", "raw_text": "@115858, why can’t I use Apple Pay to update my iCloud billing...? @AppleSupport @118936 https://t.co/YZK99E7m33", "created_at_display": "16 November 2017", "created_at_iso": "Thu Nov 16 21:07:37 +0000 2017", "provenance": {"tweet_id": "2580574", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Apple ID/Account Security", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.44187002627916483, "nearest_corpus_root_id": "1144246"}}, {"example_id": "1085267", "raw_text": "@AppleSupport phone been super glitchy since update. 1st time it’s been this bad. Freezing quite a bit. Apps lagging. Send help &amp; whiskey", "created_at_display": "23 October 2017", "created_at_iso": "Mon Oct 23 17:39:11 +0000 2017", "provenance": {"tweet_id": "1085267", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3466439250994999, "nearest_corpus_root_id": "1782940"}}, {"example_id": "2082527", "raw_text": "Hey @115858. Just wanted to let you know your update sucks. Thank you for not letting me listen to Spotify while I try to use other apps.", "created_at_display": "10 October 2017", "created_at_iso": "Tue Oct 10 18:46:09 +0000 2017", "provenance": {"tweet_id": "2082527", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:App/Service Issue", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.43720827836927856, "nearest_corpus_root_id": "2125983"}}, {"example_id": "1524157", "raw_text": "@AppleSupport New iPhone X all setup but my photos app is empty, yet my photos are store on icloud and setting are set to on", "created_at_display": "3 November 2017", "created_at_iso": "Fri Nov 03 16:23:57 +0000 2017", "provenance": {"tweet_id": "1524157", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Apple ID/Account Security", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3194629627554185, "nearest_corpus_root_id": "1180597"}}, {"example_id": "1996274", "raw_text": "#ios11 on my #iphone6s is such a disappointment. Not what I expected from @115858. Performance and battery suck. Bugs. Too bad. Just too bad!", "created_at_display": "3 November 2017", "created_at_iso": "Fri Nov 03 09:10:40 +0000 2017", "provenance": {"tweet_id": "1996274", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "boundary:Battery/Power+Software/OS Bug", "boundary_candidate_design": true, "overlap_pair": "('Battery/Power', 'Software/OS Bug')", "nearest_corpus_sim": 0.27696751630765537, "nearest_corpus_root_id": "822234"}}, {"example_id": "1747987", "raw_text": "IOS 11.1 has completely ruined my phone which is 7. My battery is draining swiftly.Feels like you did it deliberately @115858 @AppleSupport", "created_at_display": "7 November 2017", "created_at_iso": "Tue Nov 07 12:20:28 +0000 2017", "provenance": {"tweet_id": "1747987", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.44037719771978345, "nearest_corpus_root_id": "354084"}}, {"example_id": "1378198", "raw_text": "Why my #iPhone just automatically download my photo and videos somewhere and then I can’t access them no more!? Wat the heck😡 @AppleSupport", "created_at_display": "27 October 2017", "created_at_iso": "Fri Oct 27 23:06:56 +0000 2017", "provenance": {"tweet_id": "1378198", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4402119778633443, "nearest_corpus_root_id": "1765101"}}, {"example_id": "1396243", "raw_text": "@AppleSupport everytime I download an app It says to update my billing/payment info and when i do it is declined. any help please?", "created_at_display": "28 October 2017", "created_at_iso": "Sat Oct 28 12:29:19 +0000 2017", "provenance": {"tweet_id": "1396243", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Billing/Payment", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.8095722818310496, "nearest_corpus_root_id": "1288980"}}, {"example_id": "1187121", "raw_text": "Currently unable to make appointment with @AppleSupport because “Access Denied” on website.  Ideas? https://t.co/V086McmUoK", "created_at_display": "24 October 2017", "created_at_iso": "Tue Oct 24 23:54:42 +0000 2017", "provenance": {"tweet_id": "1187121", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.49058707601986284, "nearest_corpus_root_id": "2847526"}}, {"example_id": "524535", "raw_text": "ughhh my screen sensitivity has been sooo off. liking random ppls pics on IG. FT the wrong Person. this is just a no! @115858", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 03:42:43 +0000 2017", "provenance": {"tweet_id": "524535", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.23063483895177672, "nearest_corpus_root_id": "2266152"}}, {"example_id": "2975699", "raw_text": "@AppleSupport my watch band’s free loop or free ring (the part the holds down the extra length of strap) broke, can I replace just that part somehow or do I have to buy a full new strap? I have a white woven nylon.", "created_at_display": "30 November 2017", "created_at_iso": "Thu Nov 30 02:33:11 +0000 2017", "provenance": {"tweet_id": "2975699", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Repair/Physical Damage", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3711516550071977, "nearest_corpus_root_id": "2675055"}}, {"example_id": "2062352", "raw_text": "Oh my god my phones hardly been used and I’m down to 50% battery before 10am, what the hell @AppleSupport", "created_at_display": "6 October 2017", "created_at_iso": "Fri Oct 06 08:46:45 +0000 2017", "provenance": {"tweet_id": "2062352", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.40005611572104094, "nearest_corpus_root_id": "2355151"}}, {"example_id": "1735045", "raw_text": "Also what’s the fucking deal with all the question marks and shit @115858 https://t.co/NT4j34NaYR", "created_at_display": "7 November 2017", "created_at_iso": "Tue Nov 07 04:21:05 +0000 2017", "provenance": {"tweet_id": "1735045", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4150983152711579, "nearest_corpus_root_id": "1773619"}}, {"example_id": "2964181", "raw_text": "@AppleSupport iMessage its not working on my iPhone 7, neither push notifications of Whatsapp and Facebook. Is the service down?", "created_at_display": "29 November 2017", "created_at_iso": "Wed Nov 29 21:32:02 +0000 2017", "provenance": {"tweet_id": "2964181", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:App/Service Issue", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.5052683825592821, "nearest_corpus_root_id": "437020"}}, {"example_id": "1836821", "raw_text": "@AppleSupport ever since update 11.0.3 i’ve had innumerable errors &amp; glitches. Have had to hard reset a disgusting amount. What’s happening?", "created_at_display": "18 October 2017", "created_at_iso": "Wed Oct 18 16:19:02 +0000 2017", "provenance": {"tweet_id": "1836821", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.31085914290600536, "nearest_corpus_root_id": "154483"}}, {"example_id": "2013741", "raw_text": "I lost my all data and pictures after your amazing update ! Are you happy now ? ☺️ @115858", "created_at_display": "5 November 2017", "created_at_iso": "Sun Nov 05 06:56:47 +0000 2017", "provenance": {"tweet_id": "2013741", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Backup/Data Recovery", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3956529892635927, "nearest_corpus_root_id": "2302342"}}, {"example_id": "2555259", "raw_text": "@AppleSupport I restored to iPhone X, latest version of iOS and everything restored, except for some of my health data from the last week. Any thoughts?", "created_at_display": "16 November 2017", "created_at_iso": "Thu Nov 16 14:08:03 +0000 2017", "provenance": {"tweet_id": "2555259", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Backup/Data Recovery", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4238919105953698, "nearest_corpus_root_id": "1386581"}}, {"example_id": "1395071", "raw_text": "Fucking hate @115858, hate their employees, Don’t say an app is free and then charge me 100$ gtfoh. I want my god damn money back wtf???", "created_at_display": "28 October 2017", "created_at_iso": "Sat Oct 28 11:39:51 +0000 2017", "provenance": {"tweet_id": "1395071", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Billing/Payment", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.34132869829279666, "nearest_corpus_root_id": "1508697"}}, {"example_id": "1706116", "raw_text": ".@115858, please fix the 'i' bug. I can't get over it autocorrecting into a weird symbol.", "created_at_display": "6 November 2017", "created_at_iso": "Mon Nov 06 21:37:00 +0000 2017", "provenance": {"tweet_id": "1706116", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.6191378764765837, "nearest_corpus_root_id": "1627596"}}, {"example_id": "542431", "raw_text": "@AppleSupport I have a problem with my iPhone 7 with the new update 11.1.2\nThe phone does a restart every 10 seconds. I tried the previous version 11.1.1 but the problem still exists .... Please help!!", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 06:47:18 +0000 2017", "provenance": {"tweet_id": "542431", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.34004650188686425, "nearest_corpus_root_id": "1531295"}}, {"example_id": "2002508", "raw_text": "@AppleSupport don’t know how to get help with this: I continuously have to log in with my Apple ID and password in “environment: Sandbox”. What is this and how do I get rid of it? It’s very annoying using navigation.", "created_at_display": "3 November 2017", "created_at_iso": "Fri Nov 03 18:15:00 +0000 2017", "provenance": {"tweet_id": "2002508", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "boundary:Apple ID/Account Security+How-to/Feature Guidance", "boundary_candidate_design": true, "overlap_pair": "('Apple ID/Account Security', 'How-to/Feature Guidance')", "nearest_corpus_sim": 0.28977732490835695, "nearest_corpus_root_id": "958213"}}, {"example_id": "498648", "raw_text": "So glad my $1,200 iPhone stopped working today and almost caused me to miss my flight. Thanks, @115858!", "created_at_display": "1 December 2017", "created_at_iso": "Fri Dec 01 18:05:34 +0000 2017", "provenance": {"tweet_id": "498648", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2909327952436357, "nearest_corpus_root_id": "1579104"}}, {"example_id": "548095", "raw_text": "@AppleSupport Hi my iphone 6s has been restarting randomly, still in warranty. Any advice? It's updated. Thank you.", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 11:35:33 +0000 2017", "provenance": {"tweet_id": "548095", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Repair/Physical Damage", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.40852287903782336, "nearest_corpus_root_id": "517102"}}, {"example_id": "514836", "raw_text": "@AppleSupport  Where can I buy a replacement iPad screen?", "created_at_display": "1 December 2017", "created_at_iso": "Fri Dec 01 23:22:25 +0000 2017", "provenance": {"tweet_id": "514836", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Repair/Physical Damage", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.36162036584206536, "nearest_corpus_root_id": "744270"}}, {"example_id": "542457", "raw_text": "@AppleSupport iPhone 7 plus with iOS 11.1.2 \"soft\" crashes about once in a minute - quits the app, black screen and spinning wheel. After that prompts for Passcode.", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 07:25:52 +0000 2017", "provenance": {"tweet_id": "542457", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4825101856793732, "nearest_corpus_root_id": "523839"}}, {"example_id": "1563614", "raw_text": "@AppleSupport Do you have a phone number to change my account details? My  old email address no longer works &amp; I can't add my new card, etc😼", "created_at_display": "23 October 2017", "created_at_iso": "Mon Oct 23 10:39:23 +0000 2017", "provenance": {"tweet_id": "1563614", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2455885589179515, "nearest_corpus_root_id": "1694926"}}, {"example_id": "2304637", "raw_text": "@Applesupport I recently updated my iPhone 6 2 nights ago to 11.1.1 however it didn't install properly initially. As it just keep looping after restart. Apple supports only solution was to do a restore.  I have it up and running however the phone restarts itself every 5 mins...", "created_at_display": "12 November 2017", "created_at_iso": "Sun Nov 12 18:28:35 +0000 2017", "provenance": {"tweet_id": "2304637", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Backup/Data Recovery", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.28711492753684564, "nearest_corpus_root_id": "272484"}}, {"example_id": "554840", "raw_text": "@AppleSupport Not seeing the #ApplePayCash button in iMessage with the latest update? https://t.co/9r9Th0ia8X", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 18:09:13 +0000 2017", "provenance": {"tweet_id": "554840", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:App/Service Issue", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3581978758102453, "nearest_corpus_root_id": "761295"}}, {"example_id": "813315", "raw_text": "@116333 iOS 11 worst update ever.did a clean but still horrible battery life,slow app downloads,3D touch lag,frame drops,app crash. #fail", "created_at_display": "12 October 2017", "created_at_iso": "Thu Oct 12 20:03:54 +0000 2017", "provenance": {"tweet_id": "813315", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "boundary:Battery/Power+Software/OS Bug", "boundary_candidate_design": true, "overlap_pair": "('Battery/Power', 'Software/OS Bug')", "nearest_corpus_sim": 0.3663018005111771, "nearest_corpus_root_id": "243125"}}, {"example_id": "1929335", "raw_text": "Anyone else think iOS 11 is absolute dog shit? Phone crashes, freezes and battery life is awful, sort it out @AppleSupport", "created_at_display": "26 October 2017", "created_at_iso": "Thu Oct 26 20:43:56 +0000 2017", "provenance": {"tweet_id": "1929335", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "boundary:Battery/Power+Software/OS Bug", "boundary_candidate_design": true, "overlap_pair": "('Battery/Power', 'Software/OS Bug')", "nearest_corpus_sim": 0.32589058015633254, "nearest_corpus_root_id": "2210665"}}, {"example_id": "480571", "raw_text": "@AppleSupport I usually never update software because in past has ruined devices. Had to update iPhone to 11.1.1 and now email is never current. My iPad that I didn't update and never will works fine and am forced to rely on that solely for email", "created_at_display": "1 December 2017", "created_at_iso": "Fri Dec 01 04:39:28 +0000 2017", "provenance": {"tweet_id": "480571", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2658649260477184, "nearest_corpus_root_id": "1747364"}}, {"example_id": "1273687", "raw_text": "Hi @AppleSupport I think it’s not a normal disk situation… 100 gb used by OSX. WTF. https://t.co/FJ6R7aCXjc", "created_at_display": "26 October 2017", "created_at_iso": "Thu Oct 26 13:12:26 +0000 2017", "provenance": {"tweet_id": "1273687", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3534932235033086, "nearest_corpus_root_id": "1572277"}}, {"example_id": "2633188", "raw_text": "What’s up @115858? I’m trying to purchase an iPhone X  online but your system is failing. I call @AppleSupport and get told it’s being fixed to keep trying. Now your system has locked me out for trying too many times. #TerribleExperience", "created_at_display": "17 November 2017", "created_at_iso": "Fri Nov 17 17:29:43 +0000 2017", "provenance": {"tweet_id": "2633188", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.29908164907333135, "nearest_corpus_root_id": "1341724"}}, {"example_id": "560441", "raw_text": "IP Television App is not working with me , there’s a solution? or Could I refund my money? \n@AppleSupport", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 22:15:40 +0000 2017", "provenance": {"tweet_id": "560441", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Billing/Payment", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.33893643927985684, "nearest_corpus_root_id": "2978822"}}, {"example_id": "717152", "raw_text": "@AppleSupport Apple Music is tweaking and telling me that music has been taken down that hasn't been taken down 🙃", "created_at_display": "6 October 2017", "created_at_iso": "Fri Oct 06 05:21:57 +0000 2017", "provenance": {"tweet_id": "717152", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:App/Service Issue", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.36562324289352555, "nearest_corpus_root_id": "1275122"}}, {"example_id": "2293542", "raw_text": "@AppleSupport great quality bands. My watch fell of my wrist while buckled in. Now the screen is completely shattered and it came off too. I do t know how you can sell something like that. @115858", "created_at_display": "11 November 2017", "created_at_iso": "Sat Nov 11 21:03:07 +0000 2017", "provenance": {"tweet_id": "2293542", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Repair/Physical Damage", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.25576594129812924, "nearest_corpus_root_id": "2518180"}}, {"example_id": "550747", "raw_text": "@AppleSupport Explain this on my iPhone X replacement? Screen burn in? https://t.co/0dTaNyaI3s", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 13:35:13 +0000 2017", "provenance": {"tweet_id": "550747", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Repair/Physical Damage", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.5395338954638232, "nearest_corpus_root_id": "2508217"}}, {"example_id": "1386584", "raw_text": ".@AppleSupport Can you help? \n\nJust updated to iOS 11.1 &amp; this is how text bubbles are showing up on iMessage. https://t.co/DIuwOaj6tp", "created_at_display": "31 October 2017", "created_at_iso": "Tue Oct 31 20:42:54 +0000 2017", "provenance": {"tweet_id": "1386584", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:App/Service Issue", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3519410481103623, "nearest_corpus_root_id": "876726"}}, {"example_id": "1339781", "raw_text": "@AppleSupport my headset stopped working but my iphone is under warranty, can I bring it in the store to change? 😭", "created_at_display": "27 October 2017", "created_at_iso": "Fri Oct 27 09:56:07 +0000 2017", "provenance": {"tweet_id": "1339781", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Repair/Physical Damage", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.32807418167426794, "nearest_corpus_root_id": "806432"}}, {"example_id": "599081", "raw_text": "@AppleSupport Hi there! One of my iTunes movies isn't showing up on my new iPhone X despite it showing up on my MacBook Pro and my old iPhone 6S Plus. Can you help?", "created_at_display": "3 December 2017", "created_at_iso": "Sun Dec 03 20:00:08 +0000 2017", "provenance": {"tweet_id": "599081", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:App/Service Issue", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.32805862322178525, "nearest_corpus_root_id": "1967079"}}, {"example_id": "550808", "raw_text": "@AppleSupport hey my Apple Music keeps freezing and just playing up. Is it just me or is this a known problem?", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 13:28:40 +0000 2017", "provenance": {"tweet_id": "550808", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "boundary:App/Service Issue+Software/OS Bug", "boundary_candidate_design": true, "overlap_pair": "('App/Service Issue', 'Software/OS Bug')", "nearest_corpus_sim": 0.41461787924980475, "nearest_corpus_root_id": "2376096"}}, {"example_id": "582721", "raw_text": "@116333 hello sir how are you its my pleasure to tweet you i have an humble request i have iphone 5 my kids use wrong password and its block i cant buy again iphone because i am poor i request you to instruct your team to unblock my phone (  MD297AE/A  IMEI/MEID __credit_card__", "created_at_display": "3 December 2017", "created_at_iso": "Sun Dec 03 06:38:19 +0000 2017", "provenance": {"tweet_id": "582721", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Apple ID/Account Security", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2159264350315253, "nearest_corpus_root_id": "2618321"}}, {"example_id": "1706151", "raw_text": "@AppleSupport can you have the next update not automatically phone’s brightness to 100% so my battery can last the whole day?", "created_at_display": "6 November 2017", "created_at_iso": "Mon Nov 06 21:30:54 +0000 2017", "provenance": {"tweet_id": "1706151", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.27784402337746394, "nearest_corpus_root_id": "520298"}}, {"example_id": "1095148", "raw_text": "@AppleSupport Screen of new MacBook Pro turned black and no availabilities in all Paris Apple Stores this week! Help Please!", "created_at_display": "23 October 2017", "created_at_iso": "Mon Oct 23 21:12:35 +0000 2017", "provenance": {"tweet_id": "1095148", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2736235445171127, "nearest_corpus_root_id": "1693344"}}, {"example_id": "885690", "raw_text": "@AppleSupport in trying to help some old ladies setup update their closeted iPad2 I triggered iPad2 iCloud Activation Lock. As a PC guy I...", "created_at_display": "13 October 2017", "created_at_iso": "Fri Oct 13 16:36:25 +0000 2017", "provenance": {"tweet_id": "885690", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Apple ID/Account Security", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2334749579454749, "nearest_corpus_root_id": "590896"}}, {"example_id": "491408", "raw_text": "@AppleSupport One of our customers is trying to set up Apple ID on a new IPad. She has been asked for a phone number linked to billing but the IPad is asking for a number in the format 3 digits followed by six digits. How does this work with UK dial codes pls?", "created_at_display": "1 December 2017", "created_at_iso": "Fri Dec 01 16:30:38 +0000 2017", "provenance": {"tweet_id": "491408", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Apple ID/Account Security", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3114519333348198, "nearest_corpus_root_id": "619358"}}, {"example_id": "2499335", "raw_text": "Each consecutive iPhone I’ve gotten since the 4 has gotten more and more glitchy and the iPhone8 is almost intolerable.  Do better @115858", "created_at_display": "15 November 2017", "created_at_iso": "Wed Nov 15 18:30:06 +0000 2017", "provenance": {"tweet_id": "2499335", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.5338169621382642, "nearest_corpus_root_id": "1331225"}}, {"example_id": "2726849", "raw_text": "@AppleSupport, why is iCloud Photo Library, so aggressive in uploading photos? A minute after snapping one it already has to be downloaded to be viewed . #askquery", "created_at_display": "20 November 2017", "created_at_iso": "Mon Nov 20 07:02:45 +0000 2017", "provenance": {"tweet_id": "2726849", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Apple ID/Account Security", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4364600115563755, "nearest_corpus_root_id": "1647380"}}, {"example_id": "2686652", "raw_text": "@AppleSupport I keep losing WiFi Just disconnects from my home network after a few minutes and I have to manually reselect the network. iPhone X on iOS 11.1.2", "created_at_display": "19 November 2017", "created_at_iso": "Sun Nov 19 05:21:03 +0000 2017", "provenance": {"tweet_id": "2686652", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Connectivity", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3206501495515477, "nearest_corpus_root_id": "1510857"}}, {"example_id": "2349425", "raw_text": "@AppleSupport ever since I updated to iOS11 on my iPhone 6, bluetooth keeps dropping out (i.e. when using wireless headphones or my car's BT stereo). I've been hoping for each update to fix it but no love as of yet... is this a known issue?", "created_at_display": "13 November 2017", "created_at_iso": "Mon Nov 13 16:14:52 +0000 2017", "provenance": {"tweet_id": "2349425", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Connectivity", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2960431280577507, "nearest_corpus_root_id": "2977305"}}, {"example_id": "2120196", "raw_text": "@AppleSupport My Iphone 128GB is in Activation Lock right now. I Forgot my Apple ID &amp; Password. Please Help me...", "created_at_display": "8 November 2017", "created_at_iso": "Wed Nov 08 07:14:51 +0000 2017", "provenance": {"tweet_id": "2120196", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Apple ID/Account Security", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.43877677781558, "nearest_corpus_root_id": "2631628"}}, {"example_id": "751759", "raw_text": "Anybody else having iPhone issues after this new update? My phone keeps on freezing 😫 the time disappears @AppleSupport https://t.co/LEnncI5BTV", "created_at_display": "11 October 2017", "created_at_iso": "Wed Oct 11 05:06:47 +0000 2017", "provenance": {"tweet_id": "751759", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4575993460545025, "nearest_corpus_root_id": "2523438"}}, {"example_id": "2036666", "raw_text": "@AppleSupport Seriously considering a @117159 - iOS 11x is a disaster! #stevehadstandards", "created_at_display": "6 November 2017", "created_at_iso": "Mon Nov 06 22:27:01 +0000 2017", "provenance": {"tweet_id": "2036666", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3864196241228772, "nearest_corpus_root_id": "293830"}}, {"example_id": "2012732", "raw_text": "Now I am sure that @115858 is trolling me. 6th replacement of iPhone (2nd for iPhone8) and it comes with faulty volume button. Why me ??", "created_at_display": "5 November 2017", "created_at_iso": "Sun Nov 05 03:56:44 +0000 2017", "provenance": {"tweet_id": "2012732", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Repair/Physical Damage", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.25126071243801906, "nearest_corpus_root_id": "156035"}}, {"example_id": "851937", "raw_text": "I have an iphone 7 plus and iOS 11 has destroyed my battery life. @115858 @123857 @116333 https://t.co/nGjXhor9Df", "created_at_display": "9 October 2017", "created_at_iso": "Mon Oct 09 13:57:36 +0000 2017", "provenance": {"tweet_id": "851937", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.5156489871892472, "nearest_corpus_root_id": "1888353"}}, {"example_id": "875189", "raw_text": "@AppleSupport @SpotifyCares I have no idea who is going to take care of this, but I’m not listening to beatles, and my block screen froze https://t.co/V3Yg841Fsn", "created_at_display": "20 October 2017", "created_at_iso": "Fri Oct 20 16:48:28 +0000 2017", "provenance": {"tweet_id": "875189", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:App/Service Issue", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3193961316015349, "nearest_corpus_root_id": "1238243"}}, {"example_id": "1775580", "raw_text": "I hate @AppleSupport so much! Won't let me install the new iOS so I can get a new phone... 🙄🙄", "created_at_display": "10 October 2017", "created_at_iso": "Tue Oct 10 22:11:43 +0000 2017", "provenance": {"tweet_id": "1775580", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4166056125204618, "nearest_corpus_root_id": "1901517"}}, {"example_id": "282818", "raw_text": "@115858 fix the fucking wifi issue with iOS 11 on the 7+. Thanks", "created_at_display": "6 October 2017", "created_at_iso": "Fri Oct 06 03:52:27 +0000 2017", "provenance": {"tweet_id": "282818", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Connectivity", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4359693488563672, "nearest_corpus_root_id": "1676260"}}, {"example_id": "570923", "raw_text": "@AppleSupport can you please help? Everytime I type I.T., I.T. autocorrects I.T. to that that.. I don’t know what to do. It’s driving me crazy please help", "created_at_display": "3 December 2017", "created_at_iso": "Sun Dec 03 03:42:20 +0000 2017", "provenance": {"tweet_id": "570923", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.396229997797958, "nearest_corpus_root_id": "90554"}}, {"example_id": "195964", "raw_text": "What did you do with Wi-Fi on iOS 11.0.2. @AppleSupport ? There’s a big bug with accepting password for a known network.", "created_at_display": "4 October 2017", "created_at_iso": "Wed Oct 04 22:46:17 +0000 2017", "provenance": {"tweet_id": "195964", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "boundary:Connectivity+Software/OS Bug", "boundary_candidate_design": true, "overlap_pair": "('Connectivity', 'Software/OS Bug')", "nearest_corpus_sim": 0.35476025331966277, "nearest_corpus_root_id": "1785462"}}, {"example_id": "583566", "raw_text": "@115858 fixes the #ibug and now we have the I.T bug.", "created_at_display": "3 December 2017", "created_at_iso": "Sun Dec 03 07:36:29 +0000 2017", "provenance": {"tweet_id": "583566", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.5242063645798739, "nearest_corpus_root_id": "559189"}}, {"example_id": "1709950", "raw_text": "Really @115858 ?? This is what you want to autocorrect “I️” to? #WTF https://t.co/xtf84xRTYz", "created_at_display": "7 November 2017", "created_at_iso": "Tue Nov 07 00:46:48 +0000 2017", "provenance": {"tweet_id": "1709950", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.37619934217716344, "nearest_corpus_root_id": "1624992"}}, {"example_id": "553676", "raw_text": "I don’t have any subscription for any services and yet, I still get charged $9.99 every other month. Please fix this @118936 @AppleSupport @115858", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 15:46:37 +0000 2017", "provenance": {"tweet_id": "553676", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Billing/Payment", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4520973571990705, "nearest_corpus_root_id": "1580494"}}, {"example_id": "1095922", "raw_text": "@AppleSupport is there a reason why iTunes keeps crashing my Mac?", "created_at_display": "23 October 2017", "created_at_iso": "Mon Oct 23 21:31:12 +0000 2017", "provenance": {"tweet_id": "1095922", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "boundary:App/Service Issue+Software/OS Bug", "boundary_candidate_design": true, "overlap_pair": "('App/Service Issue', 'Software/OS Bug')", "nearest_corpus_sim": 0.3437397283507866, "nearest_corpus_root_id": "211327"}}, {"example_id": "1148805", "raw_text": "Hey @AppleSupport ... did your update and now my phone freezes all of the time and my battery drains faster than Dale Jr on race day. Thanks", "created_at_display": "24 October 2017", "created_at_iso": "Tue Oct 24 13:42:44 +0000 2017", "provenance": {"tweet_id": "1148805", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "boundary:Battery/Power+Software/OS Bug", "boundary_candidate_design": true, "overlap_pair": "('Battery/Power', 'Software/OS Bug')", "nearest_corpus_sim": 0.30489015902378136, "nearest_corpus_root_id": "2032087"}}, {"example_id": "589497", "raw_text": "@AppleSupport My battery seems to be draining really fast? It’s an older iPhone. How long should a battery last lifetime-wise in an iPhone?", "created_at_display": "3 December 2017", "created_at_iso": "Sun Dec 03 14:27:02 +0000 2017", "provenance": {"tweet_id": "589497", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.355335701009065, "nearest_corpus_root_id": "2298306"}}, {"example_id": "514832", "raw_text": "Question if the day. Should a 42mm series 1 @115858 watch that cost $500 have charge issues after two years. Mind you no damage and Apple troubleshooter says watch has a strong battery. All occurred after the latest watch update.", "created_at_display": "1 December 2017", "created_at_iso": "Fri Dec 01 23:35:25 +0000 2017", "provenance": {"tweet_id": "514832", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.32105867583578673, "nearest_corpus_root_id": "1065809"}}, {"example_id": "2065222", "raw_text": "@AppleSupport Since the latest iTunes update I have been unable to access Apple Music. It won't progress past the loading screen. Windows 10 https://t.co/BYkWr91kuj", "created_at_display": "7 October 2017", "created_at_iso": "Sat Oct 07 20:40:38 +0000 2017", "provenance": {"tweet_id": "2065222", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:App/Service Issue", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.24823683683791198, "nearest_corpus_root_id": "1065811"}}, {"example_id": "546689", "raw_text": "@AppleSupport unable to add my debit card details for iTunes..Plz help", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 10:20:01 +0000 2017", "provenance": {"tweet_id": "546689", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:App/Service Issue", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.47743196381463615, "nearest_corpus_root_id": "2009239"}}, {"example_id": "1136052", "raw_text": "Here’s what I notice right off the bat in iOS 11:\n\n• Can’t change the ringer volume with volume buttons.\n• Moving apps seem to lag for some reason.\n• Still some animation glitches.\n\nIs there a way I can report bugs to you guys? @AppleSupport", "created_at_display": "25 November 2017", "created_at_iso": "Sat Nov 25 18:27:00 +0000 2017", "provenance": {"tweet_id": "1136052", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "boundary:How-to/Feature Guidance+Software/OS Bug", "boundary_candidate_design": true, "overlap_pair": "('How-to/Feature Guidance', 'Software/OS Bug')", "nearest_corpus_sim": 0.4256151578269043, "nearest_corpus_root_id": "1781"}}, {"example_id": "2545681", "raw_text": "why isn’t my AppStore letting me download apps? @AppleSupport", "created_at_display": "16 November 2017", "created_at_iso": "Thu Nov 16 05:03:11 +0000 2017", "provenance": {"tweet_id": "2545681", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.6986500415378368, "nearest_corpus_root_id": "385954"}}, {"example_id": "514745", "raw_text": "@AppleSupport is there a way to lock the home button to the bottom of the vertical home screen so when u tilt your phone horizontal it stays there?", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 00:03:09 +0000 2017", "provenance": {"tweet_id": "514745", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:How-to/Feature Guidance", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.36354258436014697, "nearest_corpus_root_id": "1773416"}}, {"example_id": "774116", "raw_text": "Worst out of the box experience w/ @115858 product ever :( Customers supposed to do own research how to get it to work? 🤦‍♂️ #AppleWatch3 https://t.co/BrfuU9vosn", "created_at_display": "7 October 2017", "created_at_iso": "Sat Oct 07 15:31:57 +0000 2017", "provenance": {"tweet_id": "774116", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:How-to/Feature Guidance", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4133515804933414, "nearest_corpus_root_id": "2855287"}}, {"example_id": "2524446", "raw_text": "Hey @AppleSupport can you help with the autocorrecting of I️", "created_at_display": "16 November 2017", "created_at_iso": "Thu Nov 16 02:11:18 +0000 2017", "provenance": {"tweet_id": "2524446", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.6539575270955973, "nearest_corpus_root_id": "1484858"}}, {"example_id": "488043", "raw_text": "I’m absolutely sick of updates ruining my battery on my iPhone. Jumps from 50/30 and then like fucking 15% absolute JOKE @115858 @AppleSupport", "created_at_display": "1 December 2017", "created_at_iso": "Fri Dec 01 13:27:28 +0000 2017", "provenance": {"tweet_id": "488043", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.29850909371539947, "nearest_corpus_root_id": "1581422"}}, {"example_id": "2552460", "raw_text": "Notice how there’s no “don’t remind me again” option @AppleSupport is there a way to get this to go away permanently? With only 0.85mb upload speed there’s no point to mass online cloud backups for me https://t.co/ENAFBtMiPB", "created_at_display": "16 November 2017", "created_at_iso": "Thu Nov 16 09:53:08 +0000 2017", "provenance": {"tweet_id": "2552460", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:How-to/Feature Guidance", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.26900957146763793, "nearest_corpus_root_id": "1220417"}}, {"example_id": "584733", "raw_text": "@115858 @AppleSupport Guys, There is a bug in IOS version 11.1.2.When you turn off your Wifi from the control center, it does not turn off it from settings Wi-Fi.But the other way works fine.Is it reported?", "created_at_display": "3 December 2017", "created_at_iso": "Sun Dec 03 07:57:48 +0000 2017", "provenance": {"tweet_id": "584733", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "boundary:Connectivity+Software/OS Bug", "boundary_candidate_design": true, "overlap_pair": "('Connectivity', 'Software/OS Bug')", "nearest_corpus_sim": 0.37078263697681635, "nearest_corpus_root_id": "2630185"}}, {"example_id": "2596466", "raw_text": "@AppleSupport advice for having duplicates in my movie library? This all started when I started using the Movies Anywhere app.", "created_at_display": "17 November 2017", "created_at_iso": "Fri Nov 17 03:07:14 +0000 2017", "provenance": {"tweet_id": "2596466", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4221364767517417, "nearest_corpus_root_id": "369638"}}, {"example_id": "458433", "raw_text": "@applesupport why is my payment card being declined when I try to update it? My bank confirmed all is good on their side.", "created_at_display": "1 December 2017", "created_at_iso": "Fri Dec 01 00:35:29 +0000 2017", "provenance": {"tweet_id": "458433", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Billing/Payment", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3757801228187492, "nearest_corpus_root_id": "1040156"}}, {"example_id": "391236", "raw_text": "@AppleSupport iCloud 2FA displays the code on the same device as I’m trying to log in with. Is this normal?", "created_at_display": "9 October 2017", "created_at_iso": "Mon Oct 09 13:51:25 +0000 2017", "provenance": {"tweet_id": "391236", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Apple ID/Account Security", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.30540942108661817, "nearest_corpus_root_id": "1857605"}}, {"example_id": "1860814", "raw_text": "I hate this new iOS update ... battery dies quick, brightness goes up and down on its own, phone resets on its own... wtf @115858", "created_at_display": "19 October 2017", "created_at_iso": "Thu Oct 19 16:20:55 +0000 2017", "provenance": {"tweet_id": "1860814", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.33385033433675215, "nearest_corpus_root_id": "2079208"}}, {"example_id": "2146506", "raw_text": "Issues having Text Replacement move over to iPhoneX? I am! Any help? @AppleSupport @630992 @240840", "created_at_display": "8 November 2017", "created_at_iso": "Wed Nov 08 16:02:42 +0000 2017", "provenance": {"tweet_id": "2146506", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Repair/Physical Damage", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.40233210453669543, "nearest_corpus_root_id": "2015774"}}, {"example_id": "2683909", "raw_text": "My phone is turned off on this screen. How can I solve the problem? @AppleSupport https://t.co/FVI3Dghdkc", "created_at_display": "19 November 2017", "created_at_iso": "Sun Nov 19 10:51:02 +0000 2017", "provenance": {"tweet_id": "2683909", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:How-to/Feature Guidance", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3775337443709925, "nearest_corpus_root_id": "2567038"}}, {"example_id": "1579722", "raw_text": "@AppleSupport had no answers for this character I️ when you type the letter I*", "created_at_display": "4 November 2017", "created_at_iso": "Sat Nov 04 15:19:08 +0000 2017", "provenance": {"tweet_id": "1579722", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4744810284392962, "nearest_corpus_root_id": "1588866"}}, {"example_id": "2151155", "raw_text": "WHEN ARE YALL GONNA FIX THE I️-glitch, like these last updates are MESSING UP smh @115858", "created_at_display": "9 November 2017", "created_at_iso": "Thu Nov 09 01:21:06 +0000 2017", "provenance": {"tweet_id": "2151155", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.36657096862191485, "nearest_corpus_root_id": "1526975"}}, {"example_id": "2062150", "raw_text": "@AppleSupport Since updating MacOS new LinkedIn contacts and info do not land in Contacts anymore. Accounts are still linked. Any clue?", "created_at_display": "6 October 2017", "created_at_iso": "Fri Oct 06 06:39:54 +0000 2017", "provenance": {"tweet_id": "2062150", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.34299376649173796, "nearest_corpus_root_id": "2841962"}}, {"example_id": "316131", "raw_text": "Seems like only on twitter my “i’s” are changing to those question boxes. Help me understand @115858", "created_at_display": "11 November 2017", "created_at_iso": "Sat Nov 11 01:22:32 +0000 2017", "provenance": {"tweet_id": "316131", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.312543858621386, "nearest_corpus_root_id": "1691728"}}, {"example_id": "2586366", "raw_text": "the battery in my phone is TRASH! somebody take it to @115858 and get it replaced for me. consider it a christmas gift", "created_at_display": "17 November 2017", "created_at_iso": "Fri Nov 17 00:24:57 +0000 2017", "provenance": {"tweet_id": "2586366", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4432606117122708, "nearest_corpus_root_id": "2847519"}}, {"example_id": "694496", "raw_text": "@AppleSupport app store vertikt het apps te installeren 9/10 keer. Ook luidspreker bellen weigert hij regelmatig. Geüpdatet naar laatste versie IOS. Wat te doen?", "created_at_display": "23 November 2017", "created_at_iso": "Thu Nov 23 10:59:25 +0000 2017", "provenance": {"tweet_id": "694496", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:App/Service Issue", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3085836356448417, "nearest_corpus_root_id": "1718206"}}, {"example_id": "2053722", "raw_text": "@116333 @AppleSupport so many issues with ios11 The battery drains so fast, apps not responding. Maybe time to switch to @125607", "created_at_display": "6 October 2017", "created_at_iso": "Fri Oct 06 02:58:34 +0000 2017", "provenance": {"tweet_id": "2053722", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.38637997777265287, "nearest_corpus_root_id": "1807503"}}, {"example_id": "2285597", "raw_text": "Man. Waking people up with air raid sirens is SUPER not cool when our President seems intent on a declaration of war with literally ANY other nation.", "created_at_display": "11 November 2017", "created_at_iso": "Sat Nov 11 11:17:32 +0000 2017", "provenance": {"tweet_id": "2285597", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3030918755076186, "nearest_corpus_root_id": "2028661"}}, {"example_id": "646848", "raw_text": "Dear @115858.  Fix the #bluetooth audio on the 1200 dollar #iPhoneX\nIt's ridiculous how much this audio drops and pops and skips.", "created_at_display": "22 November 2017", "created_at_iso": "Wed Nov 22 18:30:25 +0000 2017", "provenance": {"tweet_id": "646848", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Connectivity", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.36803431182367885, "nearest_corpus_root_id": "1452996"}}, {"example_id": "1813508", "raw_text": "So my phone deleted all my messages, my contacts, logged me out of all my twitter accounts and now I can't access my banks?? @115858", "created_at_display": "15 October 2017", "created_at_iso": "Sun Oct 15 05:09:45 +0000 2017", "provenance": {"tweet_id": "1813508", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Backup/Data Recovery", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3033725374256996, "nearest_corpus_root_id": "184393"}}, {"example_id": "206920", "raw_text": "#iOS11 so many bugs, phone freezing, wifi switches on its own, battery drains fast #applesupport @AppleSupport", "created_at_display": "26 September 2017", "created_at_iso": "Tue Sep 26 06:07:03 +0000 2017", "provenance": {"tweet_id": "206920", "month": "2017-09", "is_launch_window": false, "sampling_stratum_hint": "boundary:Battery/Power+Software/OS Bug", "boundary_candidate_design": true, "overlap_pair": "('Battery/Power', 'Software/OS Bug')", "nearest_corpus_sim": 0.30813572384578125, "nearest_corpus_root_id": "2748400"}}, {"example_id": "1870934", "raw_text": "@AppleSupport iOS 11 ate my battery 😿 https://t.co/1xJWMKDnTY", "created_at_display": "19 October 2017", "created_at_iso": "Thu Oct 19 23:24:35 +0000 2017", "provenance": {"tweet_id": "1870934", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4829590615590631, "nearest_corpus_root_id": "1799866"}}, {"example_id": "1767381", "raw_text": "@AppleSupport what happened to text replacement on iPhone X? It’s not saving nor did it sync over! #iPhoneX", "created_at_display": "7 November 2017", "created_at_iso": "Tue Nov 07 21:25:58 +0000 2017", "provenance": {"tweet_id": "1767381", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Repair/Physical Damage", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3984231438535244, "nearest_corpus_root_id": "2864884"}}, {"example_id": "2179510", "raw_text": "My phone keeps lagging so much since doing the new iOS update, sort it out @115858", "created_at_display": "26 November 2017", "created_at_iso": "Sun Nov 26 07:17:12 +0000 2017", "provenance": {"tweet_id": "2179510", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.43479753270865507, "nearest_corpus_root_id": "2020181"}}, {"example_id": "2555341", "raw_text": "@147613 you lost my #iPhoneX and you have no support. I called all your numbers. So unprofessional. I am just angry @115858 right now for using your service and not @81 or @115817 \n#support #CustomerService #delivery #angry #sad #IphoneXPreOrder . PM if you can help", "created_at_display": "16 November 2017", "created_at_iso": "Thu Nov 16 13:36:41 +0000 2017", "provenance": {"tweet_id": "2555341", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Backup/Data Recovery", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3260306905418878, "nearest_corpus_root_id": "1852293"}}, {"example_id": "2356485", "raw_text": "@AppleSupport update my I Phone 6 to 11.1.1 and lost my vice mails. is there any fixes for that", "created_at_display": "13 November 2017", "created_at_iso": "Mon Nov 13 19:01:11 +0000 2017", "provenance": {"tweet_id": "2356485", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Backup/Data Recovery", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.39261379201339097, "nearest_corpus_root_id": "708659"}}, {"example_id": "542455", "raw_text": "@AppleSupport  hi brand new iPhone 8 failing to boot up from a restore from a 6s now going into ‘unexpected error’ mode cannot update or restore - where can I take this in Melbourne to get fixed /exchanged ? On hold on your customer care number for 32 mins..", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 07:18:35 +0000 2017", "provenance": {"tweet_id": "542455", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Backup/Data Recovery", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2897394110715632, "nearest_corpus_root_id": "2621233"}}, {"example_id": "1720539", "raw_text": "@AppleSupport @122986 just restored from encrypted backup to find my Authenticator app missing all the codes. Living nightmare. WTH??", "created_at_display": "3 November 2017", "created_at_iso": "Fri Nov 03 20:44:25 +0000 2017", "provenance": {"tweet_id": "1720539", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Backup/Data Recovery", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3640655321595565, "nearest_corpus_root_id": "82015"}}, {"example_id": "554790", "raw_text": "Why does my phone keep restarting like every five minutes @AppleSupport", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 18:17:17 +0000 2017", "provenance": {"tweet_id": "554790", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.5484521361717137, "nearest_corpus_root_id": "257773"}}, {"example_id": "2353665", "raw_text": "I am tweeting from my new iPhone 8. Still pretty mad that I can’t backup and restore my previous iPhone @115858", "created_at_display": "13 November 2017", "created_at_iso": "Mon Nov 13 17:30:55 +0000 2017", "provenance": {"tweet_id": "2353665", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Backup/Data Recovery", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3373394748337517, "nearest_corpus_root_id": "2127382"}}, {"example_id": "1752035", "raw_text": "@AppleSupport is the iPhone 8 plus having issues with Bluetooth connecting? My husbands won’t work. 🙁 #iphone8plus #bluetooth", "created_at_display": "17 October 2017", "created_at_iso": "Tue Oct 17 21:07:31 +0000 2017", "provenance": {"tweet_id": "1752035", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Connectivity", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3559936320750635, "nearest_corpus_root_id": "1058149"}}, {"example_id": "1341739", "raw_text": "@AppleSupport @115858 why are pre orders now at 5-6weeks for iPhone X. Can we. It buy in store on friday 3rd Nov?", "created_at_display": "27 October 2017", "created_at_iso": "Fri Oct 27 11:11:48 +0000 2017", "provenance": {"tweet_id": "1341739", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.29621266105087296, "nearest_corpus_root_id": "1350624"}}, {"example_id": "1930323", "raw_text": "@116333 @AppleSupport #IPhone 6+ need update to #ios to repairing battery consumption and mobile speed and return to the old arabic font", "created_at_display": "28 October 2017", "created_at_iso": "Sat Oct 28 03:42:47 +0000 2017", "provenance": {"tweet_id": "1930323", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.37624111395293647, "nearest_corpus_root_id": "1086833"}}, {"example_id": "1233595", "raw_text": "@AppleSupport can I just ask why my IPhone since doing the update is using 3 times the internet per day? #Shambles", "created_at_display": "25 October 2017", "created_at_iso": "Wed Oct 25 17:50:46 +0000 2017", "provenance": {"tweet_id": "1233595", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.327763848304494, "nearest_corpus_root_id": "1740874"}}, {"example_id": "1734437", "raw_text": "@AppleSupport I deleted both and reinstalled and now they are working with “hey Siri”", "created_at_display": "7 November 2017", "created_at_iso": "Tue Nov 07 04:10:12 +0000 2017", "provenance": {"tweet_id": "1734436", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3253435418368784, "nearest_corpus_root_id": "2358644"}}, {"example_id": "2476171", "raw_text": "fuck that fucking i️ bullshit my phone is $800 and y’all can’t fix a fucking glitch? hm @115858", "created_at_display": "15 November 2017", "created_at_iso": "Wed Nov 15 05:13:04 +0000 2017", "provenance": {"tweet_id": "2476171", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.5054072682344468, "nearest_corpus_root_id": "2804441"}}, {"example_id": "491418", "raw_text": "@AppleSupport since updating to the new OS on my macbook, it thinks my memory card is my hard drive, and can't open it. #help", "created_at_display": "1 December 2017", "created_at_iso": "Fri Dec 01 16:20:28 +0000 2017", "provenance": {"tweet_id": "491418", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3218433223321082, "nearest_corpus_root_id": "519226"}}, {"example_id": "1692547", "raw_text": "@AppleSupport does iphone 8 stand up to the snow? I lost my phone 🤦🏻", "created_at_display": "6 November 2017", "created_at_iso": "Mon Nov 06 15:29:12 +0000 2017", "provenance": {"tweet_id": "1692547", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Backup/Data Recovery", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3742908960486251, "nearest_corpus_root_id": "1329269"}}, {"example_id": "2321236", "raw_text": "@AppleSupport I've been trying all week to download plotagraph+ for free using the promo in the apple store app, but it keeps saying the code is invalid. Can I get a little help? https://t.co/LT90W8kcGm", "created_at_display": "26 November 2017", "created_at_iso": "Sun Nov 26 15:59:22 +0000 2017", "provenance": {"tweet_id": "2321236", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3181033780441619, "nearest_corpus_root_id": "2646264"}}, {"example_id": "2773220", "raw_text": "@AppleSupport How to fix photo not shown in Photos - Albums except only Photos &amp; Memories. https://t.co/UHPwCPkVwZ", "created_at_display": "21 November 2017", "created_at_iso": "Tue Nov 21 08:06:48 +0000 2017", "provenance": {"tweet_id": "2773220", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:How-to/Feature Guidance", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.37542263669822384, "nearest_corpus_root_id": "1271110"}}, {"example_id": "1952318", "raw_text": "Is it coincidence the day the X released my perfectly working iPhone7 Plus starts glitching out hardcore? Or is this IOS11 problems? @115858", "created_at_display": "29 October 2017", "created_at_iso": "Sun Oct 29 15:15:11 +0000 2017", "provenance": {"tweet_id": "1952318", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.256203632442065, "nearest_corpus_root_id": "1011822"}}, {"example_id": "2558616", "raw_text": "stop automatically putting my wifi &amp; bluetooth on @115858", "created_at_display": "16 November 2017", "created_at_iso": "Thu Nov 16 16:06:33 +0000 2017", "provenance": {"tweet_id": "2558616", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Connectivity", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.6238688621661025, "nearest_corpus_root_id": "868836"}}, {"example_id": "463969", "raw_text": "Now instead of the question ? And I when you type “it” it changes to I.T @115858 @AppleSupport https://t.co/49JjGcINma", "created_at_display": "1 December 2017", "created_at_iso": "Fri Dec 01 02:59:44 +0000 2017", "provenance": {"tweet_id": "463969", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.512367899813554, "nearest_corpus_root_id": "1968926"}}, {"example_id": "1673590", "raw_text": "@AppleSupport #fixitApple #MondayBlues https://t.co/KuytE3q574", "created_at_display": "6 November 2017", "created_at_iso": "Mon Nov 06 15:14:22 +0000 2017", "provenance": {"tweet_id": "1673590", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.536897393201688, "nearest_corpus_root_id": "2029669"}}, {"example_id": "94737", "raw_text": "@AppleSupport So i got a email to update my payment method, i keep trying &amp; reset my iPhone to do this but it keeps saying try again later it cannot update. Any Suggestions 🤷🏽‍♂️", "created_at_display": "30 November 2017", "created_at_iso": "Thu Nov 30 15:43:05 +0000 2017", "provenance": {"tweet_id": "94737", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Billing/Payment", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.37623547019164594, "nearest_corpus_root_id": "2948279"}}, {"example_id": "2273954", "raw_text": "Apple has the worst customer care that i have seen till today.My bro’s iPhone has Siri problem for the fifth time in a row.Very frustrating.When he asked for refund, they said,”its not possible, do whatever u want”. @116333 @AppleSupport @115858.", "created_at_display": "11 November 2017", "created_at_iso": "Sat Nov 11 02:58:15 +0000 2017", "provenance": {"tweet_id": "2273954", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Billing/Payment", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.28415507996881884, "nearest_corpus_root_id": "2304872"}}, {"example_id": "1593322", "raw_text": "@AppleSupport I bought an iPhone 8 sand I would like to buy an iPhone X. Can I trade in my iPhone 8 for a discount? Thank you !", "created_at_display": "4 November 2017", "created_at_iso": "Sat Nov 04 17:55:51 +0000 2017", "provenance": {"tweet_id": "1593322", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Billing/Payment", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3289192963424932, "nearest_corpus_root_id": "1596048"}}, {"example_id": "1724813", "raw_text": "Yo @AppleSupport, it’s kinda hard to look like an intelligent young professional when I️ can’t even type the word “I️”", "created_at_display": "7 November 2017", "created_at_iso": "Tue Nov 07 02:48:42 +0000 2017", "provenance": {"tweet_id": "1724813", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3059094925917605, "nearest_corpus_root_id": "2005429"}}, {"example_id": "150058", "raw_text": "I have been awake 35 minutes. I’ve used my @AppleSupport iPhone during that time, checking news and social media. It started with 100-percent power and now has 66 percent. This ‘great, new’ upgrade MUST be reason for power suck, right? Now, 65 percent...", "created_at_display": "24 November 2017", "created_at_iso": "Fri Nov 24 12:17:41 +0000 2017", "provenance": {"tweet_id": "150058", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3078280568343872, "nearest_corpus_root_id": "1956135"}}, {"example_id": "2900410", "raw_text": "No. @AppleSupport disconnected me while on hold--half an hour into a call in which I'd talked to a human for about five minutes. Infuriating.", "created_at_display": "28 November 2017", "created_at_iso": "Tue Nov 28 17:47:31 +0000 2017", "provenance": {"tweet_id": "2900410", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Connectivity", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3384636290991375, "nearest_corpus_root_id": "2532901"}}, {"example_id": "2503747", "raw_text": "Sooooo when is @115858 planning to fix this annoying iphone glitch??", "created_at_display": "15 November 2017", "created_at_iso": "Wed Nov 15 20:02:02 +0000 2017", "provenance": {"tweet_id": "2503747", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4829690016167729, "nearest_corpus_root_id": "1762174"}}, {"example_id": "2286474", "raw_text": "@AppleSupport updates stopped working #iPhone7Plus since the recent iOS update https://t.co/PlLZ4ZoUkG", "created_at_display": "11 November 2017", "created_at_iso": "Sat Nov 11 22:14:01 +0000 2017", "provenance": {"tweet_id": "2286474", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.5153084441248612, "nearest_corpus_root_id": "2831747"}}, {"example_id": "562377", "raw_text": "@AppleSupport my phone keeps on crashing with spinning wheel before immediately turning into black. Didn’t do anything funky; iPhone 8, iOS 11. Any advice to get this fix?", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 18:29:55 +0000 2017", "provenance": {"tweet_id": "562377", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.40982787976100066, "nearest_corpus_root_id": "1146719"}}, {"example_id": "503613", "raw_text": "@AppleSupport after the last IOS update, my phone doesn’t connect to Bluetooth accessories when on calls. Any tips?", "created_at_display": "1 December 2017", "created_at_iso": "Fri Dec 01 19:41:06 +0000 2017", "provenance": {"tweet_id": "503613", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Connectivity", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3561801082787257, "nearest_corpus_root_id": "1874809"}}, {"example_id": "2301140", "raw_text": "@AppleSupport since going to 11.1.1\nApple mail is screwy.   Not recognizing my yahoo password. And. Telling me the outgoing server is not configured.   HELP", "created_at_display": "12 November 2017", "created_at_iso": "Sun Nov 12 14:18:33 +0000 2017", "provenance": {"tweet_id": "2301140", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Apple ID/Account Security", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2601117362755101, "nearest_corpus_root_id": "2361715"}}, {"example_id": "84207", "raw_text": "Man wtf my phone is so hot !? @115858", "created_at_display": "30 November 2017", "created_at_iso": "Thu Nov 30 06:56:40 +0000 2017", "provenance": {"tweet_id": "84207", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.38886703855947036, "nearest_corpus_root_id": "1647389"}}, {"example_id": "546523", "raw_text": "@AppleSupport How to fix \"No Service\" in ios 11.1.2 in iphone 6s fix bugs....", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 11:18:35 +0000 2017", "provenance": {"tweet_id": "546523", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "boundary:How-to/Feature Guidance+Software/OS Bug", "boundary_candidate_design": true, "overlap_pair": "('How-to/Feature Guidance', 'Software/OS Bug')", "nearest_corpus_sim": 0.41907832822068825, "nearest_corpus_root_id": "239550"}}, {"example_id": "587042", "raw_text": "@AppleSupport \ntop left, the network provider vodafone no longer moves since ios 11.2 why? and the V is also covered https://t.co/DFUmB3BLB1", "created_at_display": "3 December 2017", "created_at_iso": "Sun Dec 03 10:50:46 +0000 2017", "provenance": {"tweet_id": "587042", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2460881829961048, "nearest_corpus_root_id": "2893431"}}, {"example_id": "588149", "raw_text": "@AppleSupport Hi guys having issues signing in to my Microsoft account on safari on my iPhone. Keeps saying my password and email don’t match. When I use Chrome it works fine, is anyone else having the same issue?", "created_at_display": "3 December 2017", "created_at_iso": "Sun Dec 03 12:55:05 +0000 2017", "provenance": {"tweet_id": "588149", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Apple ID/Account Security", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2565291393291129, "nearest_corpus_root_id": "1680760"}}, {"example_id": "1948543", "raw_text": "@AppleSupport how do i fix this notification?  won’t go away when i delete the event. https://t.co/FoeVcJvKzC", "created_at_display": "30 October 2017", "created_at_iso": "Mon Oct 30 14:02:14 +0000 2017", "provenance": {"tweet_id": "1948543", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:How-to/Feature Guidance", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.5231070056340634, "nearest_corpus_root_id": "2279932"}}, {"example_id": "332500", "raw_text": "@AppleSupport please fix the ios 11.0.2 battery draining issues. Had 100% battery after charging. Now i have 78% battery 30 mins later.", "created_at_display": "7 October 2017", "created_at_iso": "Sat Oct 07 16:24:57 +0000 2017", "provenance": {"tweet_id": "332500", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3635612124403653, "nearest_corpus_root_id": "2146517"}}, {"example_id": "2732932", "raw_text": "@115858 iPhone X Bluetooth does not work when simultaneously connected to HFP int he car and music streaming.", "created_at_display": "20 November 2017", "created_at_iso": "Mon Nov 20 15:55:02 +0000 2017", "provenance": {"tweet_id": "2732932", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Connectivity", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2936131146808243, "nearest_corpus_root_id": "2834337"}}, {"example_id": "538697", "raw_text": "someone get me my glasses before i️ lose all my friends i️ dont day hi back to because i️ can’t see their faces", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 04:49:01 +0000 2017", "provenance": {"tweet_id": "538697", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.27759402644072007, "nearest_corpus_root_id": "1435766"}}, {"example_id": "2205978", "raw_text": "Omg the last 2 nights now around 10pm it pops up asking me to sign into my iCloud and just won't let me sign in @AppleSupport sort it out Hun ???", "created_at_display": "9 November 2017", "created_at_iso": "Thu Nov 09 22:01:21 +0000 2017", "provenance": {"tweet_id": "2205978", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Apple ID/Account Security", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.35903086329668066, "nearest_corpus_root_id": "1366340"}}, {"example_id": "2784657", "raw_text": "IF MY PHONE WILL NOT TURN ON HOW DO YOU EXPECT ME TO GET THE VERIFICATION CODE THAT YOU TEXTED TO MY BROKEN PHONE. BUY ME A NEW PHONE PLS I'M BROKE AND UPSET @AppleSupport @16234", "created_at_display": "21 November 2017", "created_at_iso": "Tue Nov 21 17:56:39 +0000 2017", "provenance": {"tweet_id": "2784657", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Apple ID/Account Security", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2731431851881081, "nearest_corpus_root_id": "2002194"}}, {"example_id": "1332295", "raw_text": "@AppleSupport my App Store is not working😕 #ios11", "created_at_display": "16 October 2017", "created_at_iso": "Mon Oct 16 05:47:29 +0000 2017", "provenance": {"tweet_id": "1332295", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:App/Service Issue", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.8327756517444667, "nearest_corpus_root_id": "686566"}}, {"example_id": "741676", "raw_text": "@AppleSupport whatsapp hata veriyor. Güncellemenizden sonra oldu. https://t.co/LstJOhkEmK", "created_at_display": "11 October 2017", "created_at_iso": "Wed Oct 11 09:45:49 +0000 2017", "provenance": {"tweet_id": "741676", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:App/Service Issue", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.33768434398825986, "nearest_corpus_root_id": "920897"}}, {"example_id": "1276298", "raw_text": "@AppleSupport unable to update 11.0.3, failed consecutive three times kindly fix the problem", "created_at_display": "26 October 2017", "created_at_iso": "Thu Oct 26 15:02:51 +0000 2017", "provenance": {"tweet_id": "1276298", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.40432800654986856, "nearest_corpus_root_id": "433033"}}, {"example_id": "2478970", "raw_text": "@AppleSupport I'm unable to access the developer program. I do have invoices and purchase orders with me. Please Help!\n\nCase ID: 100339964078", "created_at_display": "15 November 2017", "created_at_iso": "Wed Nov 15 10:58:42 +0000 2017", "provenance": {"tweet_id": "2478970", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Billing/Payment", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.27749322834064305, "nearest_corpus_root_id": "862717"}}, {"example_id": "946682", "raw_text": "Oye @115858 aplicate y ya arregla el bug del bluetooth.", "created_at_display": "21 October 2017", "created_at_iso": "Sat Oct 21 16:05:26 +0000 2017", "provenance": {"tweet_id": "946682", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "boundary:Connectivity+Software/OS Bug", "boundary_candidate_design": true, "overlap_pair": "('Connectivity', 'Software/OS Bug')", "nearest_corpus_sim": 0.3311788641160627, "nearest_corpus_root_id": "32376"}}, {"example_id": "752455", "raw_text": "@AppleSupport hi, is this a scam? If not, how do I cancel this, cause I've not set it up. https://t.co/s5ApWfRUWK", "created_at_display": "11 October 2017", "created_at_iso": "Wed Oct 11 10:07:11 +0000 2017", "provenance": {"tweet_id": "752455", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:How-to/Feature Guidance", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2984109780384918, "nearest_corpus_root_id": "2852332"}}, {"example_id": "308586", "raw_text": "@AppleSupport Still not receiving any support for my issue.  I am filing a complaint about this along with a refund and a return label.", "created_at_display": "6 October 2017", "created_at_iso": "Fri Oct 06 22:07:02 +0000 2017", "provenance": {"tweet_id": "308586", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Billing/Payment", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2920254130275842, "nearest_corpus_root_id": "1573637"}}, {"example_id": "2025158", "raw_text": "@115858 pls fix this I️ bug it’s all I️ ask", "created_at_display": "6 November 2017", "created_at_iso": "Mon Nov 06 10:03:10 +0000 2017", "provenance": {"tweet_id": "2025158", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.7495036378553908, "nearest_corpus_root_id": "2292790"}}, {"example_id": "1205049", "raw_text": "Hey @115858 thanks for fucking up my phone with your lousy ass update. Fix your shit. I didnt pay for you to fuck up my phone. Delete ios11", "created_at_display": "31 October 2017", "created_at_iso": "Tue Oct 31 02:58:34 +0000 2017", "provenance": {"tweet_id": "1205049", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2885087759670276, "nearest_corpus_root_id": "2043986"}}, {"example_id": "1290468", "raw_text": "@115948 @AppleSupport my subscription hasn’t been working all day, and i need my music. like now. what’s the issue?", "created_at_display": "26 October 2017", "created_at_iso": "Thu Oct 26 19:25:41 +0000 2017", "provenance": {"tweet_id": "1290468", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:Billing/Payment", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3579599160318141, "nearest_corpus_root_id": "1297986"}}, {"example_id": "2237221", "raw_text": "I used to be able to tell Siri to set a reminder when I get home the. She would ask me “what do you want to be reminded about?” Now she is asking for a time. Idk what time. Just when I get home. What gives @115858 #siriproblems", "created_at_display": "10 November 2017", "created_at_iso": "Fri Nov 10 15:49:27 +0000 2017", "provenance": {"tweet_id": "2237221", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.1911510353596706, "nearest_corpus_root_id": "2451715"}}, {"example_id": "1586244", "raw_text": "@AppleSupport FIX MY PHONE it’s not even christmas yet and you messing my phone up with these updates and bugs! can you wait til christmas 🤬", "created_at_display": "4 November 2017", "created_at_iso": "Sat Nov 04 13:00:35 +0000 2017", "provenance": {"tweet_id": "1586244", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Software/OS Bug", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.35434795601332736, "nearest_corpus_root_id": "2449509"}}, {"example_id": "2079971", "raw_text": "@AppleSupport how can i go back the the last update? 11.0.2 is battery consuming and so laggy ! Plz fix", "created_at_display": "9 October 2017", "created_at_iso": "Mon Oct 09 19:29:20 +0000 2017", "provenance": {"tweet_id": "2079971", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "boundary:How-to/Feature Guidance+Software/OS Bug", "boundary_candidate_design": true, "overlap_pair": "('How-to/Feature Guidance', 'Software/OS Bug')", "nearest_corpus_sim": 0.39798974110117114, "nearest_corpus_root_id": "2302761"}}, {"example_id": "520253", "raw_text": "Hey @AppleSupport my iPhone 6 is locking &amp; requiring passcode every minute. I see lots of others have the same issue.  What happened? How do we fix it? Resetting date to Nov doesn't work for me. (iOS11.1.2, over wifi, in NZ)", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 01:51:21 +0000 2017", "provenance": {"tweet_id": "520253", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:Connectivity", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.23122558490763545, "nearest_corpus_root_id": "756"}}, {"example_id": "522952", "raw_text": "@AppleSupport suddenly my iphone 7 restart itself every 1 min, how to solve it?", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 03:31:42 +0000 2017", "provenance": {"tweet_id": "522952", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:How-to/Feature Guidance", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.376061600386571, "nearest_corpus_root_id": "2116242"}}, {"example_id": "542447", "raw_text": "@AppleSupport @115858  my ios 11.1.2 is force restarting to home screen every 1 minute! How to fix? Pls", "created_at_display": "2 December 2017", "created_at_iso": "Sat Dec 02 02:18:02 +0000 2017", "provenance": {"tweet_id": "542447", "month": "2017-12", "is_launch_window": false, "sampling_stratum_hint": "intent:How-to/Feature Guidance", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3484835410964371, "nearest_corpus_root_id": "2288027"}}, {"example_id": "2454575", "raw_text": "@116333 me using iphone7plus so last 3days so my iPhone battery die last night my iPhone battery 38% morning pick my phone battery only 10% so pls@problem resolved", "created_at_display": "15 November 2017", "created_at_iso": "Wed Nov 15 03:13:55 +0000 2017", "provenance": {"tweet_id": "2454575", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "intent:Battery/Power", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2556210903548961, "nearest_corpus_root_id": "1470786"}}, {"example_id": "2191189", "raw_text": "@AppleSupport how do I get the podcast app to display a simple list view of subscribed shows, and not just display the massive tiles #ios11", "created_at_display": "19 October 2017", "created_at_iso": "Thu Oct 19 08:18:21 +0000 2017", "provenance": {"tweet_id": "2191189", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:How-to/Feature Guidance", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.2712855617097676, "nearest_corpus_root_id": "311343"}}, {"example_id": "1205042", "raw_text": "Bro my iPhone is tripping with this update @115858 can you fix it.?", "created_at_display": "31 October 2017", "created_at_iso": "Tue Oct 31 03:01:11 +0000 2017", "provenance": {"tweet_id": "1205042", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.4569707704582011, "nearest_corpus_root_id": "1574362"}}, {"example_id": "1682428", "raw_text": "@AppleSupport i need assistance with my MacBook Pro.", "created_at_display": "6 November 2017", "created_at_iso": "Mon Nov 06 12:19:54 +0000 2017", "provenance": {"tweet_id": "1682428", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.789174623175641, "nearest_corpus_root_id": "2355159"}}, {"example_id": "2256447", "raw_text": "@AppleSupport Since IOS11 messages to my iPhone no longer appear on my iMac, iPad etc. What has changed and how do I get it back ?", "created_at_display": "19 October 2017", "created_at_iso": "Thu Oct 19 17:16:35 +0000 2017", "provenance": {"tweet_id": "2256447", "month": "2017-10", "is_launch_window": true, "sampling_stratum_hint": "intent:How-to/Feature Guidance", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.34589321206276147, "nearest_corpus_root_id": "222962"}}, {"example_id": "1997547", "raw_text": "Hopefully I’m not the only one facing this issue anytime I unlock my #iphone7 \n@AppleSupport @115858 #iPhone7Plus  @115858 #iOS11.2 #iOS11 https://t.co/cgetmG7SWG", "created_at_display": "3 November 2017", "created_at_iso": "Fri Nov 03 11:14:16 +0000 2017", "provenance": {"tweet_id": "1997547", "month": "2017-11", "is_launch_window": true, "sampling_stratum_hint": "no_match_source", "boundary_candidate_design": false, "overlap_pair": null, "nearest_corpus_sim": 0.3380727514235853, "nearest_corpus_root_id": "2680396"}}]</script>
+<script>
+(function() {
+  const EXAMPLES = JSON.parse(document.getElementById('example-data').textContent);
+  const TOTAL = EXAMPLES.length;
+  const STORAGE_KEY = 'golden_set_v1_labeling_progress';
+
+  let labels = {};   // keyed by example_id -> label object
+  let currentIndex = 0;
+
+  const els = {
+    exampleMeta: document.getElementById('exampleMeta'),
+    exampleDate: document.getElementById('exampleDate'),
+    rawText: document.getElementById('rawText'),
+    intentField: document.getElementById('intentField'),
+    intentSelect: document.getElementById('intentSelect'),
+    reasonField: document.getElementById('reasonField'),
+    reasonSelect: document.getElementById('reasonSelect'),
+    notesInput: document.getElementById('notesInput'),
+    prevBtn: document.getElementById('prevBtn'),
+    nextBtn: document.getElementById('nextBtn'),
+    skipBtn: document.getElementById('skipBtn'),
+    exportBtn: document.getElementById('exportBtn'),
+    validationMsg: document.getElementById('validationMsg'),
+    progressFill: document.getElementById('progressFill'),
+    progressCount: document.getElementById('progressCount'),
+    exportSummary: document.getElementById('exportSummary'),
+    saveIndicator: document.getElementById('saveIndicator'),
+  };
+
+  function emptyLabel() {
+    return {
+      is_support_request: null,
+      intent: null,
+      should_escalate: null,
+      escalation_reason: null,
+      boundary_case: null,
+      labeler_notes: '',
+      labeled_at: null,
+    };
+  }
+
+  function getLabel(exampleId) {
+    if (!labels[exampleId]) labels[exampleId] = emptyLabel();
+    return labels[exampleId];
+  }
+
+  function isComplete(label) {
+    if (label.is_support_request === null) return false;
+    if (label.is_support_request === true && !label.intent) return false;
+    if (label.is_support_request === false && label.intent !== null) return false;
+    if (label.should_escalate === null) return false;
+    if (label.should_escalate === true && !label.escalation_reason) return false;
+    if (label.should_escalate === false && label.escalation_reason !== null) return false;
+    if (label.boundary_case === null) return false;
+    return true;
+  }
+
+  function labeledCount() {
+    return Object.values(labels).filter(isComplete).length;
+  }
+
+  async function persist() {
+    try {
+      const payload = JSON.stringify({ labels, currentIndex });
+      const result = await window.storage.set(STORAGE_KEY, payload, false);
+      if (result) flashSaved();
+    } catch (e) {
+      console.error('Autosave failed:', e);
+    }
+  }
+
+  function flashSaved() {
+    els.saveIndicator.classList.add('show');
+    clearTimeout(flashSaved._t);
+    flashSaved._t = setTimeout(() => els.saveIndicator.classList.remove('show'), 1200);
+  }
+
+  async function loadProgress() {
+    try {
+      const result = await window.storage.get(STORAGE_KEY, false);
+      if (result && result.value) {
+        const parsed = JSON.parse(result.value);
+        labels = parsed.labels || {};
+        currentIndex = typeof parsed.currentIndex === 'number' ? parsed.currentIndex : 0;
+      }
+    } catch (e) {
+      // no existing progress -- start fresh
+      labels = {};
+      currentIndex = 0;
+    }
+  }
+
+  function setActiveToggle(group, value) {
+    const btns = document.querySelectorAll(`.toggle-btn[data-value]`);
+    document.querySelectorAll(`[data-group="${group}"] .toggle-btn`).forEach(btn => {
+      const btnVal = btn.getAttribute('data-value') === 'true';
+      btn.classList.toggle('active', value === btnVal);
+    });
+  }
+
+  function render() {
+    const ex = EXAMPLES[currentIndex];
+    const label = getLabel(ex.example_id);
+
+    els.exampleMeta.textContent = `Example ${currentIndex + 1} of ${TOTAL}`;
+    els.exampleDate.textContent = ex.created_at_display;
+    els.rawText.textContent = ex.raw_text;
+
+    setActiveToggle('is_support_request', label.is_support_request);
+    setActiveToggle('should_escalate', label.should_escalate);
+    setActiveToggle('boundary_case', label.boundary_case);
+
+    els.intentSelect.value = label.intent || '';
+    els.reasonSelect.value = label.escalation_reason || '';
+    els.notesInput.value = label.labeler_notes || '';
+
+    updateDependentFields(label);
+    updateProgress();
+    els.validationMsg.textContent = '';
+    els.prevBtn.disabled = currentIndex === 0;
+  }
+
+  function updateDependentFields(label) {
+    const supportYes = label.is_support_request === true;
+    els.intentSelect.disabled = !supportYes;
+    if (!supportYes) { els.intentSelect.value = ''; label.intent = null; }
+
+    const escalateYes = label.should_escalate === true;
+    els.reasonSelect.disabled = !escalateYes;
+    if (!escalateYes) { els.reasonSelect.value = ''; label.escalation_reason = null; }
+  }
+
+  function updateProgress() {
+    const count = labeledCount();
+    const pct = Math.round((count / TOTAL) * 100);
+    els.progressFill.style.width = pct + '%';
+    els.progressCount.textContent = `${count} of ${TOTAL} labeled`;
+    els.exportSummary.textContent = `${count} of ${TOTAL} labeled.` +
+      (count < TOTAL ? ` ${TOTAL - count} remaining.` : ' All examples labeled.');
+  }
+
+  function validateCurrent() {
+    const ex = EXAMPLES[currentIndex];
+    const label = getLabel(ex.example_id);
+    const missing = [];
+    if (label.is_support_request === null) missing.push('is_support_request');
+    if (label.is_support_request === true && !label.intent) missing.push('intent');
+    if (label.should_escalate === null) missing.push('should_escalate');
+    if (label.should_escalate === true && !label.escalation_reason) missing.push('escalation_reason');
+    if (label.boundary_case === null) missing.push('boundary_case');
+    return missing;
+  }
+
+  document.querySelectorAll('.btn-row').forEach(row => {
+    row.addEventListener('click', (e) => {
+      const btn = e.target.closest('.toggle-btn');
+      if (!btn) return;
+      const group = row.getAttribute('data-group');
+      const value = btn.getAttribute('data-value') === 'true';
+      const ex = EXAMPLES[currentIndex];
+      const label = getLabel(ex.example_id);
+      label[group] = value;
+      updateDependentFields(label);
+      setActiveToggle(group, value);
+      label.labeled_at = new Date().toISOString();
+      persist();
+      updateProgress();
+      els.validationMsg.textContent = '';
+    });
+  });
+
+  els.intentSelect.addEventListener('change', () => {
+    const ex = EXAMPLES[currentIndex];
+    const label = getLabel(ex.example_id);
+    label.intent = els.intentSelect.value || null;
+    label.labeled_at = new Date().toISOString();
+    persist();
+    updateProgress();
+  });
+
+  els.reasonSelect.addEventListener('change', () => {
+    const ex = EXAMPLES[currentIndex];
+    const label = getLabel(ex.example_id);
+    label.escalation_reason = els.reasonSelect.value || null;
+    label.labeled_at = new Date().toISOString();
+    persist();
+    updateProgress();
+  });
+
+  els.notesInput.addEventListener('input', () => {
+    const ex = EXAMPLES[currentIndex];
+    const label = getLabel(ex.example_id);
+    label.labeler_notes = els.notesInput.value;
+    persist();
+  });
+
+  els.prevBtn.addEventListener('click', () => {
+    if (currentIndex > 0) { currentIndex--; persist(); render(); }
+  });
+
+  els.nextBtn.addEventListener('click', () => {
+    const missing = validateCurrent();
+    if (missing.length > 0) {
+      els.validationMsg.textContent = 'Please complete: ' + missing.join(', ');
+      return;
+    }
+    if (currentIndex < TOTAL - 1) {
+      currentIndex++;
+      persist();
+      render();
+    } else {
+      els.validationMsg.textContent = 'This is the last example. Use Export when ready.';
+    }
+  });
+
+  els.skipBtn.addEventListener('click', () => {
+    if (currentIndex < TOTAL - 1) {
+      currentIndex++;
+      persist();
+      render();
+    }
+  });
+
+  els.exportBtn.addEventListener('click', () => {
+    const count = labeledCount();
+    if (count < TOTAL) {
+      const proceed = confirm(
+        `${TOTAL - count} of ${TOTAL} examples are not yet fully labeled. ` +
+        `Export anyway? Unlabeled fields will be exported as null.`
+      );
+      if (!proceed) return;
+    }
+    const lines = EXAMPLES.map(ex => {
+      const label = getLabel(ex.example_id);
+      const record = {
+        example_id: ex.example_id,
+        raw_text: ex.raw_text,
+        created_at: ex.created_at_iso,
+        is_support_request: label.is_support_request,
+        intent: label.intent,
+        should_escalate: label.should_escalate,
+        escalation_reason: label.escalation_reason,
+        boundary_case: label.boundary_case,
+        labeler_notes: label.labeler_notes || '',
+        provenance: ex.provenance,
+        labeling_meta: {
+          labeled_at: label.labeled_at,
+          pass: 'first',
+        },
+      };
+      return JSON.stringify(record);
+    });
+    const blob = new Blob([lines.join('\n')], { type: 'application/x-jsonlines' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'golden_set_v1.jsonl';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  (async function init() {
+    await loadProgress();
+    if (currentIndex >= TOTAL) currentIndex = 0;
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
