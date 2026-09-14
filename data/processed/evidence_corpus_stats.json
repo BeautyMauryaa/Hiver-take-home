@@ -1,0 +1,584 @@
+{
+  "build_generated_at": "2026-09-14T09:49:28.214529+00:00",
+  "total_input_threads": 80717,
+  "coherent_threads": 76348,
+  "incoherent_or_multi_customer_excluded": 4369,
+  "missing_customer_or_brand_message_excluded": 0,
+  "no_substantive_brand_evidence_excluded": 64912,
+  "excluded_golden_dev_roots_excluded": 220,
+  "brand_initiated_anomaly_excluded": 138,
+  "empty_customer_text_anomaly_excluded": 0,
+  "empty_brand_evidence_text_anomaly_excluded": 0,
+  "eligible_threads_considered": 75990,
+  "evidence_units_produced": 11078,
+  "evidence_units_with_1_substantive_reply": 10885,
+  "evidence_units_with_gt1_substantive_reply": 193,
+  "total_substantive_replies": 11281,
+  "total_excluded_brand_replies_by_classification": {
+    "diagnostic_only": 18760,
+    "redirect": 51219,
+    "acknowledgement": 713,
+    "unclassified": 15162
+  },
+  "duplicate_evidence_id_count": 0,
+  "duplicate_root_id_count": 0,
+  "empty_customer_text_count_in_output": 0,
+  "empty_brand_evidence_text_count_in_output": 0,
+  "anomalous_records": [
+    {
+      "thread_id": "11651",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "41669",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "54454",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "58830",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "87183",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "94853",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "148093",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "188568",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "196008",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "208905",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "208957",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "210563",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "222961",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "229182",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "290165",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "299046",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "326400",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "359263",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "435217",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "435785",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "446476",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "489696",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "556096",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "567701",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "590887",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "675397",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "704567",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "716623",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "730300",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "745133",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "759867",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "788417",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "809482",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "818245",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "854570",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "857561",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "859198",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "865942",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "880073",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "887862",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "888088",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "915804",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "967303",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "981950",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1046616",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1069947",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1071243",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1080757",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1084212",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1092487",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1098695",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1101967",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1138000",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1152831",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1156290",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1181727",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1201149",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1219467",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1238233",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1239762",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1281480",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1304715",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1359927",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1360182",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1455362",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1478361",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1482452",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1516670",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1560028",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1587402",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1598596",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1629818",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1633115",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1633129",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1634007",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1704738",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1707712",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1762208",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1765871",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1778977",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1816551",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1840685",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1871967",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1893982",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1895341",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1895760",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1915237",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1932988",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1939413",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1946890",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1948723",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1963670",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "1983773",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2002490",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2013860",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2040203",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2050970",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2058518",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2060457",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2105994",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2123198",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2125010",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2128144",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2129131",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2169865",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2220401",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2234450",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2255461",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2255544",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2279153",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2286724",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2300379",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2302681",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2333339",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2355125",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2360406",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2374414",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2398025",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2436022",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2444122",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2481804",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2506695",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2557300",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2572661",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2593043",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2675721",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2703246",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2727096",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2754749",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2779290",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2785636",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2831814",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2833060",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2843897",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2866746",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2887396",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2900443",
+      "reason": "brand_initiated_anomaly"
+    },
+    {
+      "thread_id": "2970234",
+      "reason": "brand_initiated_anomaly"
+    }
+  ],
+  "VERIFICATION_evidence_units_from_excluded_roots_must_be_0": 0,
+  "VERIFICATION_evidence_units_from_incoherent_threads_must_be_0": 0,
+  "classifier_calibration_note": "reply_classification.py rules calibrated against a 65-thread manual audit: 95.4% agreement (62/65). 3 known, named residual disagreements are documented in EVIDENCE_CORPUS_README.md -- not hidden. No rule changes made during this corpus-build step."
+}
