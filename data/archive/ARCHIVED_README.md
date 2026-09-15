@@ -3,6 +3,7 @@
 **Do not use these files for retrieval.** They predate the locked
 evidence-unit design and, critically, **have no golden-set leakage guard.**
 
+
 ## What generated these files
 
 `build_retrieval_corpus.py` (also archived here), given
